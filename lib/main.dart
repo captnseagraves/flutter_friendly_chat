@@ -21,33 +21,39 @@ class FriendlyChatApp extends StatelessWidget {
 }
 
 class ChatMessage extends StatelessWidget {
-  ChatMessage({this.text}); // NEW
-  final String text; // NEW
+  ChatMessage({this.text, this.animationController}); // MODIFIED
+  final String text;
+  final AnimationController animationController;
   String _name = 'captnseagraves';
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            margin: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(child: Text(_name[0])),
-          ),
-          Column(
+    return SizeTransition(
+        sizeFactor: // NEW
+            CurvedAnimation(
+                parent: animationController, curve: Curves.easeOut), // NEW
+        axisAlignment: 0.0, // NEW
+        child: Container(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_name, style: Theme.of(context).textTheme.headline4),
               Container(
-                margin: EdgeInsets.only(top: 5.0),
-                child: Text(text),
+                margin: const EdgeInsets.only(right: 16.0),
+                child: CircleAvatar(child: Text(_name[0])),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_name, style: Theme.of(context).textTheme.headline4),
+                  Container(
+                    margin: EdgeInsets.only(top: 5.0),
+                    child: Text(text),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    );
+        ));
   }
 }
 
@@ -56,7 +62,7 @@ class ChatScreen extends StatefulWidget {
   _ChatScreenState createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final _textController = TextEditingController();
   final List<ChatMessage> _messages = [];
   final FocusNode _focusNode = FocusNode(); // NEW
@@ -64,12 +70,17 @@ class _ChatScreenState extends State<ChatScreen> {
   void _handleSubmitted(String text) {
     _textController.clear();
     ChatMessage message = ChatMessage(
-      text: text, //NEW
+      text: text,
+      animationController: AnimationController(
+        duration: const Duration(milliseconds: 300), // NEW
+        vsync: this, // NEW
+      ),
     );
     setState(() {
       _messages.insert(0, message); //NEW
     });
     _focusNode.requestFocus();
+    message.animationController.forward(); // NEW
   }
 
   @override
@@ -128,5 +139,12 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    for (ChatMessage message in _messages)
+      message.animationController.dispose();
+    super.dispose();
   }
 }
